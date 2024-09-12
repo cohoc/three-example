@@ -3,7 +3,6 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { PointerLockControls } from "three/examples/jsm/controls/PointerLockControls.js";
 
 let asteroid;
-let asteroidBoundingBox;
 
 const scene = new THREE.Scene();
 //scene.fog = new THREE.FogExp2(0x000000, 0.2);
@@ -23,22 +22,9 @@ const camera = new THREE.PerspectiveCamera(
   0.1,
   900
 );
+//camera frustum
 const cameraVPM = new THREE.Matrix4();
 const frustum = new THREE.Frustum();
-
-const cameraBox = new THREE.Mesh(
-  new THREE.BoxGeometry(3, 3, 1),
-  new THREE.MeshBasicMaterial({
-    color: 0xff0000,
-    wireframe: true,
-  })
-);
-
-const cameraBoundingBox = new THREE.Box3(
-  new THREE.Vector3(),
-  new THREE.Vector3()
-);
-cameraBoundingBox.setFromObject(cameraBox);
 
 const closedSpline = new THREE.CatmullRomCurve3([
   new THREE.Vector3(0, 0, -80),
@@ -68,7 +54,6 @@ const controls = new OrbitControls(camera, renderer.domElement);
 //const pointerControls = new PointerLockControls(camera, document.body);
 //scene.add(tube);
 scene.add(line);
-scene.add(cameraBox);
 window.addEventListener("resize", windowResize);
 asteroidSpawn();
 
@@ -82,16 +67,6 @@ function asteroidUpdate() {
 function cameraUpdate(pos, lookAt) {
   camera.position.copy(pos);
   camera.lookAt(lookAt);
-}
-
-function cameraBoxUpdate(lookAt) {
-  const camBoxPos = cameraBox.position.copy(camera.position);
-  cameraBox.position.copy(camBoxPos);
-  cameraBox.lookAt(lookAt);
-  cameraBoundingBox
-    .copy(cameraBox.geometry.boundingBox)
-    .applyMatrix4(cameraBox.matrixWorld);
-  //console.log(camBoxPos);
 }
 
 function checkCollision() {
@@ -111,7 +86,6 @@ function createAsteroid() {
   const time = clock.getElapsedTime();
   const looptime = 160;
   const t = (time % looptime) / looptime;
-  const isActive = true;
   asteroid = new THREE.Mesh(
     new THREE.DodecahedronGeometry(Math.random() * (0.35 - 0.05) + 0.05),
     new THREE.MeshBasicMaterial({
@@ -120,14 +94,12 @@ function createAsteroid() {
     })
   );
   asteroid.name = "asteroid";
-  //asteroidBoundingBox.position.copy(asteroid.position);
 
   const astPos = tube.geometry.parameters.path.getPointAt((t + 0.05) % 1);
   astPos.x += Math.random() - 1;
   astPos.y += Math.random() - 1;
   astPos.z += Math.random() - 1;
   asteroid.position.copy(astPos);
-  asteroidBoundingBox = new THREE.Box3().setFromObject(asteroid);
   scene.add(asteroid);
 }
 
@@ -150,7 +122,6 @@ function animate() {
   let lookAt = tube.geometry.parameters.path.getPointAt((t + 0.03) % 1);
 
   cameraUpdate(pos, lookAt);
-  cameraBoxUpdate(lookAt);
   if (scene.getObjectByName("asteroid")) {
     asteroidUpdate();
     checkCollision();
